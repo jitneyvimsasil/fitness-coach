@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import {
   calculateProgress,
@@ -30,6 +30,7 @@ export function useProfile() {
   const [badgeDefinitions, setBadgeDefinitions] = useState<BadgeDefinition[]>([]);
   const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
   const [gamificationEvents, setGamificationEvents] = useState<GamificationEvent[]>([]);
+  const earnedBadgeIdsRef = useRef(new Set<string>());
 
   const isConfigured = useMemo(() => isSupabaseConfigured(), []);
   const supabase = useMemo(() => isConfigured ? createClient() : null, [isConfigured]);
@@ -43,6 +44,11 @@ export function useProfile() {
       earned_at: earnedMap.get(def.id),
     }));
   }, [badgeDefinitions, earnedBadges]);
+
+  // Keep ref in sync with earned badges state
+  useEffect(() => {
+    earnedBadgeIdsRef.current = new Set(earnedBadges.map(b => b.badge_id));
+  }, [earnedBadges]);
 
   // Dismiss the first event in the queue
   const dismissEvent = useCallback(() => {
@@ -160,12 +166,12 @@ export function useProfile() {
       updated_at: new Date().toISOString(),
     };
 
-    // 4. Check badge unlocks
+    // 4. Check badge unlocks (use ref for always-current earned set)
     const freezeUsed = streakEvents.some(e => e.type === 'streak_freeze_used');
     const newBadges = checkBadgeUnlocks(
       updatedProfile,
       badgeDefinitions,
-      new Set(earnedBadges.map(b => b.badge_id)),
+      earnedBadgeIdsRef.current,
       { freezeUsed },
     );
     for (const badge of newBadges) {
@@ -177,6 +183,10 @@ export function useProfile() {
     setProgress(newProgress);
     setStreakInfo(calculateStreak(updatedProfile));
     if (newBadges.length > 0) {
+      // Update ref immediately to prevent duplicates on rapid calls
+      for (const b of newBadges) {
+        earnedBadgeIdsRef.current.add(b.id);
+      }
       setEarnedBadges(prev => [
         ...prev,
         ...newBadges.map(b => ({ badge_id: b.id, earned_at: new Date().toISOString() })),
@@ -202,11 +212,13 @@ export function useProfile() {
 
         if (updateError) throw updateError;
 
-        // Insert newly earned badges
+        // Upsert newly earned badges (ignoreDuplicates prevents constraint errors)
         if (newBadges.length > 0) {
-          await supabase.from('user_badges').insert(
+          const { error: badgeError } = await supabase.from('user_badges').upsert(
             newBadges.map(b => ({ user_id: profile.id, badge_id: b.id })),
+            { onConflict: 'user_id,badge_id', ignoreDuplicates: true },
           );
+          if (badgeError) console.warn('Badge upsert error:', badgeError);
         }
       } catch (err) {
         console.error('Failed to update profile:', err);
@@ -215,6 +227,10 @@ export function useProfile() {
         setProgress(calculateProgress(oldCount));
         setStreakInfo(calculateStreak(profile));
         if (newBadges.length > 0) {
+          // Revert ref
+          for (const b of newBadges) {
+            earnedBadgeIdsRef.current.delete(b.id);
+          }
           setEarnedBadges(prev => prev.filter(
             b => !newBadges.some(nb => nb.id === b.badge_id),
           ));
@@ -222,7 +238,7 @@ export function useProfile() {
         setGamificationEvents(prev => prev.filter(e => !events.includes(e)));
       }
     }
-  }, [profile, supabase, badgeDefinitions, earnedBadges]);
+  }, [profile, supabase, badgeDefinitions]);
 
   // Initial fetch
   useEffect(() => {

@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { GamificationPanel } from '@/components/gamification/GamificationPanel';
 import { Button } from '@/components/ui/button';
-import { Dumbbell, Flame } from 'lucide-react';
+import { Dumbbell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
 import { useProfile } from '@/hooks/useProfile';
 import { useGamificationToast } from '@/hooks/useGamificationToast';
 import { CelebrationToast } from '@/components/gamification/CelebrationToast';
+import { AvatarPanel } from '@/components/avatar/AvatarPanel';
 
 export default function ChatPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -20,7 +21,7 @@ export default function ChatPage() {
   } = useProfile();
   const router = useRouter();
 
-  const { messages, isLoading, stallState, sendMessage, retryMessage } = useChat({
+  const { messages, isLoading, stallState, sendMessage, retryMessage, clearMessages } = useChat({
     userId: user?.id,
     onMessageSent: incrementMessageCount,
   });
@@ -35,13 +36,14 @@ export default function ChatPage() {
   }, [authLoading, user, router]);
 
   const handleSignOut = async () => {
+    clearMessages();
     await signOut();
     router.push('/login');
   };
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center">
         <div className="animate-pulse">
           <div className="w-12 h-12 rounded-xl bg-primary/20" />
         </div>
@@ -50,7 +52,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Celebration toast overlay */}
       <CelebrationToast event={currentEvent} visible={visible} onDismiss={dismiss} />
 
@@ -74,6 +76,9 @@ export default function ChatPage() {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
+        {/* Avatar panel */}
+        <AvatarPanel />
+
         {/* Chat area */}
         <main className="flex-1 flex flex-col min-w-0">
           <ChatContainer
@@ -85,8 +90,8 @@ export default function ChatPage() {
           />
         </main>
 
-        {/* Gamification sidebar - hidden on mobile */}
-        <aside className="hidden lg:block w-80 border-l border-border overflow-y-auto">
+        {/* Gamification sidebar */}
+        <aside className="w-80 border-l border-border overflow-y-auto flex-shrink-0 bg-card/50">
           <div className="p-4">
             <GamificationPanel
               progress={progress}
@@ -99,40 +104,6 @@ export default function ChatPage() {
         </aside>
       </div>
 
-      {/* Mobile gamification bar - shown on mobile only */}
-      <div className="lg:hidden border-t border-border bg-card p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <span className="text-sm font-bold text-primary">
-                {progress?.level || 1}
-              </span>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Level</p>
-              <p className="text-sm font-medium">{progress?.name || 'Beginner'}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-orange-400" aria-hidden="true" />
-            <div>
-              <p className="text-xs text-muted-foreground">Streak</p>
-              <p className="text-sm font-bold">{streakInfo?.currentStreak || 0}</p>
-            </div>
-          </div>
-          <div className="w-24">
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-500"
-                style={{ width: `${progress?.progress || 0}%` }}
-              />
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5 text-center">
-              {progress?.messagesToNext || 0} to next
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

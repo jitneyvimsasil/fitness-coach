@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTTS } from '@/hooks/useTTS';
 import type { Message } from '@/lib/types';
 
 interface MessageBubbleProps {
@@ -11,6 +13,7 @@ interface MessageBubbleProps {
 
 export const MessageBubble = React.memo(function MessageBubble({ message, onRetry }: MessageBubbleProps) {
   const { id, content, isUser, timestamp, isError, retryContent } = message;
+  const { speak, stop, isSpeaking, isSupported } = useTTS();
 
   return (
     <div
@@ -40,18 +43,32 @@ export const MessageBubble = React.memo(function MessageBubble({ message, onRetr
             Retry message
           </button>
         )}
-        <time
-          className={cn(
-            'block text-[10px] mt-1.5 opacity-60',
-            isUser ? 'text-right' : 'text-left'
+        <div className={cn(
+          'flex items-center gap-2 mt-1.5',
+          isUser ? 'justify-end' : 'justify-start'
+        )}>
+          <time
+            className="text-[10px] opacity-60"
+            aria-label={`Sent at ${timestamp.toLocaleTimeString()}`}
+          >
+            {timestamp.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </time>
+          {!isUser && isSupported && (
+            <button
+              onClick={() => isSpeaking ? stop() : speak(content)}
+              className="text-muted-foreground/40 hover:text-primary transition-colors"
+              aria-label={isSpeaking ? 'Stop speaking' : 'Read aloud'}
+            >
+              {isSpeaking
+                ? <VolumeX className="w-3.5 h-3.5" />
+                : <Volume2 className="w-3.5 h-3.5" />
+              }
+            </button>
           )}
-          aria-label={`Sent at ${timestamp.toLocaleTimeString()}`}
-        >
-          {timestamp.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </time>
+        </div>
       </div>
     </div>
   );
