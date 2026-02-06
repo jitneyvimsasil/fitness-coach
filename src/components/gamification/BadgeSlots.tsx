@@ -1,58 +1,88 @@
 'use client';
 
+import React from 'react';
+import { Lock } from 'lucide-react';
+import { BADGE_ICONS } from '@/lib/gamification';
 import { cn } from '@/lib/utils';
+import type { BadgeWithStatus } from '@/lib/types';
 
 interface BadgeSlotsProps {
+  badges: BadgeWithStatus[];
   className?: string;
 }
 
-// Placeholder for V2 badge system
-export function BadgeSlots({ className }: BadgeSlotsProps) {
-  const placeholderBadges = [
-    { id: 1, locked: true },
-    { id: 2, locked: true },
-    { id: 3, locked: true },
-    { id: 4, locked: true },
-  ];
+export const BadgeSlots = React.memo(function BadgeSlots({ badges, className }: BadgeSlotsProps) {
+  if (badges.length === 0) {
+    return (
+      <div className={cn('space-y-3', className)}>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider">Badges</p>
+        <p className="text-xs text-muted-foreground text-center py-2">Loading badges...</p>
+      </div>
+    );
+  }
+
+  const earnedCount = badges.filter(b => b.earned).length;
 
   return (
     <div className={cn('space-y-3', className)}>
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">Badges</p>
-      <div className="grid grid-cols-4 gap-2">
-        {placeholderBadges.map((badge) => (
-          <div
-            key={badge.id}
-            className={cn(
-              'aspect-square rounded-lg flex items-center justify-center',
-              'bg-muted/50 border border-border/50',
-              'transition-all duration-200'
-            )}
-          >
-            <LockIcon className="w-4 h-4 text-muted-foreground/50" />
-          </div>
-        ))}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider">Badges</p>
+        <p className="text-xs text-muted-foreground">{earnedCount}/{badges.length}</p>
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        Coming soon
-      </p>
+      <div className="grid grid-cols-4 gap-2">
+        {badges.map((badge) => {
+          const Icon = badge.earned
+            ? (BADGE_ICONS[badge.icon_name] || Lock)
+            : Lock;
+
+          // Check if recently earned (within 60 seconds)
+          const isRecent = badge.earned_at &&
+            (Date.now() - new Date(badge.earned_at).getTime()) < 60000;
+
+          return (
+            <div
+              key={badge.id}
+              className="group relative"
+            >
+              <div
+                className={cn(
+                  'aspect-square rounded-lg flex items-center justify-center',
+                  'transition-all duration-200',
+                  badge.earned
+                    ? 'bg-primary/10 border border-primary/20 hover:border-primary/40'
+                    : 'bg-muted/50 border border-border/50 hover:border-border',
+                  isRecent && 'animate-pulse',
+                )}
+              >
+                <Icon
+                  className={cn(
+                    'w-4 h-4',
+                    badge.earned ? 'text-primary' : 'text-muted-foreground/50',
+                  )}
+                  aria-hidden="true"
+                />
+              </div>
+
+              {/* Tooltip */}
+              <div className={cn(
+                'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10',
+                'pointer-events-none opacity-0 group-hover:opacity-100',
+                'transition-opacity duration-150',
+                'w-36 p-2 rounded-lg',
+                'bg-popover border border-border shadow-lg',
+                'text-center',
+              )}>
+                <p className="text-xs font-medium text-foreground">{badge.name}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {badge.earned
+                    ? `Earned ${badge.earned_at ? new Date(badge.earned_at).toLocaleDateString() : ''}`
+                    : badge.description}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
-}
-
-function LockIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
+});

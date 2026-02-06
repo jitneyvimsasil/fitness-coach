@@ -7,12 +7,14 @@ import { ProgressRing } from './ProgressRing';
 import { LevelDisplay } from './LevelDisplay';
 import { StreakCounter } from './StreakCounter';
 import { BadgeSlots } from './BadgeSlots';
-import type { ProgressInfo } from '@/lib/types';
+import type { ProgressInfo, StreakInfo, BadgeWithStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface GamificationPanelProps {
   progress: ProgressInfo | null;
   messageCount: number;
+  streakInfo: StreakInfo | null;
+  badges: BadgeWithStatus[];
   loading?: boolean;
   className?: string;
 }
@@ -20,6 +22,8 @@ interface GamificationPanelProps {
 export const GamificationPanel = React.memo(function GamificationPanel({
   progress,
   messageCount,
+  streakInfo,
+  badges,
   loading,
   className,
 }: GamificationPanelProps) {
@@ -66,7 +70,7 @@ export const GamificationPanel = React.memo(function GamificationPanel({
       <LevelDisplay level={progress.level} name={progress.name} />
 
       {/* Streak Counter */}
-      <StreakCounter count={messageCount} label="Total messages" />
+      <StreakCounter streakInfo={streakInfo} messageCount={messageCount} />
 
       {/* Next Level Info */}
       {progress.messagesToNext > 0 && (
@@ -79,7 +83,7 @@ export const GamificationPanel = React.memo(function GamificationPanel({
 
       {/* Badge Slots */}
       <div className="pt-4 border-t border-border">
-        <BadgeSlots />
+        <BadgeSlots badges={badges} />
       </div>
     </Card>
   );

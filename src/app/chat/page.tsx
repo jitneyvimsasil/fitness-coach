@@ -5,20 +5,27 @@ import { useRouter } from 'next/navigation';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { GamificationPanel } from '@/components/gamification/GamificationPanel';
 import { Button } from '@/components/ui/button';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Flame } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
 import { useProfile } from '@/hooks/useProfile';
+import { useGamificationToast } from '@/hooks/useGamificationToast';
+import { CelebrationToast } from '@/components/gamification/CelebrationToast';
 
 export default function ChatPage() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { profile, progress, loading: profileLoading, incrementMessageCount } = useProfile();
+  const {
+    profile, progress, loading: profileLoading, incrementMessageCount,
+    streakInfo, badgesWithStatus, gamificationEvents, dismissEvent,
+  } = useProfile();
   const router = useRouter();
 
   const { messages, isLoading, stallState, sendMessage, retryMessage } = useChat({
     userId: user?.id,
     onMessageSent: incrementMessageCount,
   });
+
+  const { currentEvent, visible, dismiss } = useGamificationToast(gamificationEvents, dismissEvent);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -44,6 +51,9 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Celebration toast overlay */}
+      <CelebrationToast event={currentEvent} visible={visible} onDismiss={dismiss} />
+
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
         <div className="flex items-center gap-3">
@@ -81,6 +91,8 @@ export default function ChatPage() {
             <GamificationPanel
               progress={progress}
               messageCount={profile?.message_count || 0}
+              streakInfo={streakInfo}
+              badges={badgesWithStatus}
               loading={profileLoading}
             />
           </div>
@@ -101,9 +113,12 @@ export default function ChatPage() {
               <p className="text-sm font-medium">{progress?.name || 'Beginner'}</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Messages</p>
-            <p className="text-sm font-bold">{profile?.message_count || 0}</p>
+          <div className="flex items-center gap-1.5">
+            <Flame className="w-4 h-4 text-orange-400" aria-hidden="true" />
+            <div>
+              <p className="text-xs text-muted-foreground">Streak</p>
+              <p className="text-sm font-bold">{streakInfo?.currentStreak || 0}</p>
+            </div>
           </div>
           <div className="w-24">
             <div className="h-2 bg-muted rounded-full overflow-hidden">

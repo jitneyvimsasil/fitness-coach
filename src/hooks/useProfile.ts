@@ -2,8 +2,23 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
-import { calculateProgress } from '@/lib/gamification';
-import type { UserProfile, ProgressInfo } from '@/lib/types';
+import {
+  calculateProgress,
+  calculateStreak,
+  computeStreakUpdate,
+  detectLevelUp,
+  checkBadgeUnlocks,
+  DEFAULT_BADGE_DEFINITIONS,
+} from '@/lib/gamification';
+import type {
+  UserProfile,
+  ProgressInfo,
+  StreakInfo,
+  BadgeDefinition,
+  EarnedBadge,
+  BadgeWithStatus,
+  GamificationEvent,
+} from '@/lib/types';
 import type { AuthChangeEvent } from '@supabase/supabase-js';
 
 export function useProfile() {
@@ -11,16 +26,35 @@ export function useProfile() {
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
+  const [badgeDefinitions, setBadgeDefinitions] = useState<BadgeDefinition[]>([]);
+  const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
+  const [gamificationEvents, setGamificationEvents] = useState<GamificationEvent[]>([]);
 
   const isConfigured = useMemo(() => isSupabaseConfigured(), []);
   const supabase = useMemo(() => isConfigured ? createClient() : null, [isConfigured]);
 
-  // Fetch profile
+  // Merge badge definitions with earned status
+  const badgesWithStatus: BadgeWithStatus[] = useMemo(() => {
+    const earnedMap = new Map(earnedBadges.map(b => [b.badge_id, b.earned_at]));
+    return badgeDefinitions.map(def => ({
+      ...def,
+      earned: earnedMap.has(def.id),
+      earned_at: earnedMap.get(def.id),
+    }));
+  }, [badgeDefinitions, earnedBadges]);
+
+  // Dismiss the first event in the queue
+  const dismissEvent = useCallback(() => {
+    setGamificationEvents(prev => prev.slice(1));
+  }, []);
+
+  // Fetch profile + badges
   const fetchProfile = useCallback(async () => {
     if (!supabase) {
       setLoading(false);
-      // Set default progress for demo mode
       setProgress(calculateProgress(0));
+      setBadgeDefinitions(DEFAULT_BADGE_DEFINITIONS);
       return;
     }
 
@@ -30,20 +64,34 @@ export function useProfile() {
       if (!user) {
         setProfile(null);
         setProgress(null);
+        setStreakInfo(null);
+        setEarnedBadges([]);
         setLoading(false);
         return;
       }
 
-      const { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      // Fetch profile, badge definitions, and earned badges in parallel
+      const [profileResult, badgeDefsResult, earnedResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('badge_definitions').select('*').order('sort_order'),
+        supabase.from('user_badges').select('badge_id, earned_at').eq('user_id', user.id),
+      ]);
 
-      if (fetchError) {
-        // Profile might not exist yet (new user)
-        if (fetchError.code === 'PGRST116') {
-          // Create initial profile
+      // Set badge definitions (fallback to defaults if table doesn't exist yet)
+      if (badgeDefsResult.data && badgeDefsResult.data.length > 0) {
+        setBadgeDefinitions(badgeDefsResult.data);
+      } else {
+        setBadgeDefinitions(DEFAULT_BADGE_DEFINITIONS);
+      }
+
+      // Set earned badges
+      if (earnedResult.data) {
+        setEarnedBadges(earnedResult.data);
+      }
+
+      if (profileResult.error) {
+        if (profileResult.error.code === 'PGRST116') {
+          // Create initial profile for new user
           const newProfile: Partial<UserProfile> = {
             id: user.id,
             email: user.email || '',
@@ -51,6 +99,11 @@ export function useProfile() {
             message_count: 0,
             current_level: 1,
             level_name: 'Beginner',
+            current_streak: 0,
+            longest_streak: 0,
+            last_active_date: null,
+            streak_freezes_available: 0,
+            last_freeze_date: null,
           };
 
           const { data: created, error: createError } = await supabase
@@ -62,12 +115,15 @@ export function useProfile() {
           if (createError) throw createError;
           setProfile(created);
           setProgress(calculateProgress(0));
+          setStreakInfo(calculateStreak(created));
         } else {
-          throw fetchError;
+          throw profileResult.error;
         }
       } else {
+        const data = profileResult.data;
         setProfile(data);
         setProgress(calculateProgress(data.message_count));
+        setStreakInfo(calculateStreak(data));
       }
     } catch (err) {
       console.error('Profile fetch error:', err);
@@ -77,46 +133,96 @@ export function useProfile() {
     }
   }, [supabase]);
 
-  // Increment message count
+  // Increment message count with full gamification logic
   const incrementMessageCount = useCallback(async () => {
-    if (!supabase || !profile) {
-      // Demo mode: just update local state
-      setProfile(prev => {
-        if (!prev) return prev;
-        const newCount = prev.message_count + 1;
-        const newProgress = calculateProgress(newCount);
-        setProgress(newProgress);
-        return { ...prev, message_count: newCount, current_level: newProgress.level, level_name: newProgress.name };
-      });
-      return;
-    }
+    if (!profile) return;
 
-    const newCount = profile.message_count + 1;
+    const oldCount = profile.message_count;
+    const newCount = oldCount + 1;
     const newProgress = calculateProgress(newCount);
+    const events: GamificationEvent[] = [];
 
-    // Optimistically update local state
-    setProfile(prev => prev ? { ...prev, message_count: newCount, current_level: newProgress.level, level_name: newProgress.name } : null);
-    setProgress(newProgress);
+    // 1. Detect level-up
+    const levelEvent = detectLevelUp(oldCount, newCount);
+    if (levelEvent) events.push(levelEvent);
 
-    try {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          message_count: newCount,
-          current_level: newProgress.level,
-          level_name: newProgress.name,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', profile.id);
+    // 2. Compute streak update
+    const { updates: streakUpdates, events: streakEvents } = computeStreakUpdate(profile);
+    events.push(...streakEvents);
 
-      if (updateError) throw updateError;
-    } catch (err) {
-      console.error('Failed to update message count:', err);
-      // Revert optimistic update
-      setProfile(prev => prev ? { ...prev, message_count: profile.message_count } : null);
-      setProgress(calculateProgress(profile.message_count));
+    // 3. Build updated profile for badge checking
+    const updatedProfile: UserProfile = {
+      ...profile,
+      message_count: newCount,
+      current_level: newProgress.level,
+      level_name: newProgress.name,
+      ...streakUpdates,
+      updated_at: new Date().toISOString(),
+    };
+
+    // 4. Check badge unlocks
+    const freezeUsed = streakEvents.some(e => e.type === 'streak_freeze_used');
+    const newBadges = checkBadgeUnlocks(
+      updatedProfile,
+      badgeDefinitions,
+      new Set(earnedBadges.map(b => b.badge_id)),
+      { freezeUsed },
+    );
+    for (const badge of newBadges) {
+      events.push({ type: 'badge_earned', badge });
     }
-  }, [profile, supabase]);
+
+    // 5. Optimistic local updates
+    setProfile(updatedProfile);
+    setProgress(newProgress);
+    setStreakInfo(calculateStreak(updatedProfile));
+    if (newBadges.length > 0) {
+      setEarnedBadges(prev => [
+        ...prev,
+        ...newBadges.map(b => ({ badge_id: b.id, earned_at: new Date().toISOString() })),
+      ]);
+    }
+    if (events.length > 0) {
+      setGamificationEvents(prev => [...prev, ...events]);
+    }
+
+    // 6. Persist to Supabase
+    if (supabase) {
+      try {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            message_count: newCount,
+            current_level: newProgress.level,
+            level_name: newProgress.name,
+            ...streakUpdates,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', profile.id);
+
+        if (updateError) throw updateError;
+
+        // Insert newly earned badges
+        if (newBadges.length > 0) {
+          await supabase.from('user_badges').insert(
+            newBadges.map(b => ({ user_id: profile.id, badge_id: b.id })),
+          );
+        }
+      } catch (err) {
+        console.error('Failed to update profile:', err);
+        // Revert optimistic update
+        setProfile(profile);
+        setProgress(calculateProgress(oldCount));
+        setStreakInfo(calculateStreak(profile));
+        if (newBadges.length > 0) {
+          setEarnedBadges(prev => prev.filter(
+            b => !newBadges.some(nb => nb.id === b.badge_id),
+          ));
+        }
+        setGamificationEvents(prev => prev.filter(e => !events.includes(e)));
+      }
+    }
+  }, [profile, supabase, badgeDefinitions, earnedBadges]);
 
   // Initial fetch
   useEffect(() => {
@@ -143,6 +249,10 @@ export function useProfile() {
     progress,
     loading,
     error,
+    streakInfo,
+    badgesWithStatus,
+    gamificationEvents,
+    dismissEvent,
     incrementMessageCount,
     refreshProfile: fetchProfile,
     isConfigured,
