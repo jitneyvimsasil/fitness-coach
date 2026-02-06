@@ -1,18 +1,28 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Dumbbell } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
 import type { Message } from '@/lib/types';
+import type { StallState } from '@/hooks/useChat';
 
 interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
+  stallState?: StallState;
+  onRetry?: (messageId: string) => void;
 }
 
-export function MessageList({ messages, isLoading }: MessageListProps) {
+const VISIBLE_LIMIT = 50;
+
+export function MessageList({ messages, isLoading, stallState, onRetry }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [showAll, setShowAll] = useState(false);
+
+  const visibleMessages = showAll ? messages : messages.slice(-VISIBLE_LIMIT);
+  const hasHidden = !showAll && messages.length > VISIBLE_LIMIT;
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -24,7 +34,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-            <DumbbellIcon className="w-8 h-8 text-primary" />
+            <Dumbbell className="w-8 h-8 text-primary" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
             Welcome to Fitness Coach
@@ -40,34 +50,24 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
 
   return (
     <ScrollArea className="flex-1 p-4">
-      <div className="space-y-4 max-w-3xl mx-auto">
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
+      <div className="space-y-4 max-w-3xl mx-auto" aria-live="polite" aria-relevant="additions">
+        {hasHidden && (
+          <div className="text-center">
+            <button
+              onClick={() => setShowAll(true)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-muted"
+            >
+              Load {messages.length - VISIBLE_LIMIT} earlier messages
+            </button>
+          </div>
+        )}
+        {visibleMessages.map((message) => (
+          <MessageBubble key={message.id} message={message} onRetry={onRetry} />
         ))}
-        {isLoading && <TypingIndicator />}
+        {isLoading && <TypingIndicator stallState={stallState} />}
         <div ref={bottomRef} />
       </div>
     </ScrollArea>
   );
 }
 
-function DumbbellIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M14.4 14.4 9.6 9.6" />
-      <path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z" />
-      <path d="m21.5 21.5-1.4-1.4" />
-      <path d="M3.9 3.9 2.5 2.5" />
-      <path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z" />
-    </svg>
-  );
-}

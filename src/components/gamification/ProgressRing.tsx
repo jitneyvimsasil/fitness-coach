@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface ProgressRingProps {
@@ -10,7 +11,7 @@ interface ProgressRingProps {
   children?: React.ReactNode;
 }
 
-export function ProgressRing({
+export const ProgressRing = React.memo(function ProgressRing({
   progress,
   size = 120,
   strokeWidth = 8,
@@ -58,4 +59,4 @@ export function ProgressRing({
       </div>
     </div>
   );
-}
+});

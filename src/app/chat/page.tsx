@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { GamificationPanel } from '@/components/gamification/GamificationPanel';
 import { Button } from '@/components/ui/button';
+import { Dumbbell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
 import { useProfile } from '@/hooks/useProfile';
@@ -14,7 +15,7 @@ export default function ChatPage() {
   const { profile, progress, loading: profileLoading, incrementMessageCount } = useProfile();
   const router = useRouter();
 
-  const { messages, isLoading, sendMessage } = useChat({
+  const { messages, isLoading, stallState, sendMessage, retryMessage } = useChat({
     userId: user?.id,
     onMessageSent: incrementMessageCount,
   });
@@ -47,7 +48,7 @@ export default function ChatPage() {
       <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <DumbbellIcon className="w-4 h-4 text-primary" />
+            <Dumbbell className="w-4 h-4 text-primary" />
           </div>
           <h1 className="font-semibold">Fitness Coach</h1>
         </div>
@@ -68,7 +69,9 @@ export default function ChatPage() {
           <ChatContainer
             messages={messages}
             isLoading={isLoading}
+            stallState={stallState}
             onSend={sendMessage}
+            onRetry={retryMessage}
           />
         </main>
 
@@ -119,23 +122,3 @@ export default function ChatPage() {
   );
 }
 
-function DumbbellIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M14.4 14.4 9.6 9.6" />
-      <path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z" />
-      <path d="m21.5 21.5-1.4-1.4" />
-      <path d="M3.9 3.9 2.5 2.5" />
-      <path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z" />
-    </svg>
-  );
-}

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProgressRing } from './ProgressRing';
@@ -16,7 +17,7 @@ interface GamificationPanelProps {
   className?: string;
 }
 
-export function GamificationPanel({
+export const GamificationPanel = React.memo(function GamificationPanel({
   progress,
   messageCount,
   loading,
@@ -82,4 +83,4 @@ export function GamificationPanel({
       </div>
     </Card>
   );
-}
+});

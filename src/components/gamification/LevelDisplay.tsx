@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { LEVEL_COLORS } from '@/lib/gamification';
 
@@ -9,7 +10,7 @@ interface LevelDisplayProps {
   className?: string;
 }
 
-export function LevelDisplay({ level, name, className }: LevelDisplayProps) {
+export const LevelDisplay = React.memo(function LevelDisplay({ level, name, className }: LevelDisplayProps) {
   const colors = LEVEL_COLORS[level] || LEVEL_COLORS[1];
 
   return (
@@ -30,4 +31,4 @@ export function LevelDisplay({ level, name, className }: LevelDisplayProps) {
       </div>
     </div>
   );
-}
+});

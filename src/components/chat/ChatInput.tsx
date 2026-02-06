@@ -2,6 +2,7 @@
 
 import { useState, useCallback, KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { MAX_MESSAGE_LENGTH } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
@@ -10,15 +11,20 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
+const CHAR_WARNING_THRESHOLD = Math.floor(MAX_MESSAGE_LENGTH * 0.8);
+
 export function ChatInput({ onSend, disabled, placeholder = "Ask your fitness coach..." }: ChatInputProps) {
   const [input, setInput] = useState('');
 
+  const isOverLimit = input.length > MAX_MESSAGE_LENGTH;
+  const showCounter = input.length >= CHAR_WARNING_THRESHOLD;
+
   const handleSend = useCallback(() => {
-    if (input.trim() && !disabled) {
+    if (input.trim() && !disabled && !isOverLimit) {
       onSend(input.trim());
       setInput('');
     }
-  }, [input, disabled, onSend]);
+  }, [input, disabled, isOverLimit, onSend]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -36,7 +42,9 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask your fitness co
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
+          maxLength={MAX_MESSAGE_LENGTH + 100}
           rows={1}
+          aria-label="Type your message to the fitness coach"
           className={cn(
             'w-full resize-none rounded-xl border border-border bg-input',
             'px-4 py-3 text-sm md:text-base',
@@ -45,7 +53,8 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask your fitness co
             'transition-all duration-200',
             'min-h-[48px] max-h-[120px]',
             'scrollbar-thin',
-            disabled && 'opacity-50 cursor-not-allowed'
+            disabled && 'opacity-50 cursor-not-allowed',
+            isOverLimit && 'border-destructive focus:ring-destructive/50'
           )}
           style={{
             height: 'auto',
@@ -57,10 +66,20 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask your fitness co
             target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
           }}
         />
+        {showCounter && (
+          <span
+            className={cn(
+              'absolute bottom-1.5 right-3 text-[10px]',
+              isOverLimit ? 'text-destructive' : 'text-muted-foreground'
+            )}
+          >
+            {input.length}/{MAX_MESSAGE_LENGTH}
+          </span>
+        )}
       </div>
       <Button
         onClick={handleSend}
-        disabled={disabled || !input.trim()}
+        disabled={disabled || !input.trim() || isOverLimit}
         size="lg"
         className={cn(
           'h-12 px-6 rounded-xl',

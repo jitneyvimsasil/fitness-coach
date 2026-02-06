@@ -1,8 +1,12 @@
+export const MAX_MESSAGE_LENGTH = 2000;
+
 export interface Message {
   id: string;
   content: string;
   isUser: boolean;
   timestamp: Date;
+  isError?: boolean;
+  retryContent?: string;
 }
 
 export interface UserProfile {
