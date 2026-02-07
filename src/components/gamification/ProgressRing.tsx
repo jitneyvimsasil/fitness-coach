@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { m } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 interface ProgressRingProps {
@@ -39,8 +40,8 @@ export const ProgressRing = React.memo(function ProgressRing({
           strokeWidth={strokeWidth}
           className="text-muted/30"
         />
-        {/* Progress circle */}
-        <circle
+        {/* Progress circle — spring animated */}
+        <m.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -48,9 +49,16 @@ export const ProgressRing = React.memo(function ProgressRing({
           stroke="currentColor"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
           strokeLinecap="round"
-          className="text-primary transition-all duration-500 ease-out"
+          className="text-primary"
+          initial={false}
+          animate={{ strokeDashoffset: offset }}
+          transition={{
+            type: 'spring',
+            stiffness: 100,
+            damping: 20,
+            mass: 0.5,
+          }}
         />
       </svg>
       {/* Center content */}

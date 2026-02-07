@@ -34,7 +34,7 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask your fitness co
   }, [handleSend]);
 
   return (
-    <div className="flex items-end gap-3 p-4 bg-background border-t border-border">
+    <div className="flex items-end gap-2 sm:gap-3 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-4 sm:pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-background border-t border-border">
       <div className="relative flex-1">
         <textarea
           value={input}
@@ -82,7 +82,7 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask your fitness co
         disabled={disabled || !input.trim() || isOverLimit}
         size="lg"
         className={cn(
-          'h-12 px-6 rounded-xl',
+          'h-11 px-4 sm:h-12 sm:px-6 rounded-xl',
           'bg-primary hover:bg-primary/90',
           'transition-all duration-200',
           'disabled:opacity-50 disabled:cursor-not-allowed'

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { GamificationEvent } from '@/lib/types';
 
 const DISPLAY_DURATION = 4000; // 4 seconds
-const EXIT_ANIMATION_DURATION = 300; // match CSS transition
+const EXIT_ANIMATION_DURATION = 400; // match motion spring exit
 
 export function useGamificationToast(
   events: GamificationEvent[],

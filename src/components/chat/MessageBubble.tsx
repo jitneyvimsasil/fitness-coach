@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { m } from 'motion/react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTTS } from '@/hooks/useTTS';
@@ -16,7 +17,10 @@ export const MessageBubble = React.memo(function MessageBubble({ message, onRetr
   const { speak, stop, isSpeaking, isSupported } = useTTS();
 
   return (
-    <div
+    <m.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
       className={cn(
         'flex w-full',
         isUser ? 'justify-end' : 'justify-start'
@@ -70,6 +74,6 @@ export const MessageBubble = React.memo(function MessageBubble({ message, onRetr
           )}
         </div>
       </div>
-    </div>
+    </m.div>
   );
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { m, AnimatePresence } from 'motion/react';
 import { Flame, Snowflake, Shield, Star } from 'lucide-react';
 import { BADGE_ICONS } from '@/lib/gamification';
 import { cn } from '@/lib/utils';
@@ -69,44 +70,52 @@ export const CelebrationToast = React.memo(function CelebrationToast({
   visible,
   onDismiss,
 }: CelebrationToastProps) {
-  if (!event) return null;
-
-  const config = getEventConfig(event);
-  const Icon = config.icon;
+  const config = event ? getEventConfig(event) : null;
 
   return (
-    <div
-      className={cn(
-        'fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto',
-        'transition-all duration-300 ease-out',
-        visible
-          ? 'opacity-100 translate-y-0'
-          : 'opacity-0 -translate-y-4',
-      )}
-    >
-      <button
-        onClick={onDismiss}
-        className={cn(
-          'flex items-center gap-3 px-5 py-3 rounded-xl',
-          'bg-gradient-to-r', config.accent,
-          'border', config.borderColor,
-          'backdrop-blur-md bg-card/80',
-          'shadow-lg shadow-black/20',
-          'cursor-pointer hover:scale-[1.02] active:scale-[0.98]',
-          'transition-transform duration-150',
-        )}
-      >
-        <div className={cn(
-          'flex items-center justify-center w-10 h-10 rounded-lg',
-          'bg-background/50',
-        )}>
-          <Icon className={cn('w-5 h-5', config.iconColor)} />
-        </div>
-        <div className="text-left">
-          <p className="text-sm font-semibold text-foreground">{config.title}</p>
-          <p className="text-xs text-muted-foreground">{config.message}</p>
-        </div>
-      </button>
-    </div>
+    <AnimatePresence>
+      {event && visible && config && (() => {
+        const Icon = config.icon;
+        return (
+          <m.div
+            key={event.type}
+            initial={{ opacity: 0, y: -40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.98 }}
+            transition={{
+              type: 'spring',
+              stiffness: 400,
+              damping: 25,
+              mass: 0.8,
+            }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
+          >
+            <button
+              onClick={onDismiss}
+              className={cn(
+                'flex items-center gap-3 px-5 py-3 rounded-xl',
+                'bg-gradient-to-r', config.accent,
+                'border', config.borderColor,
+                'backdrop-blur-md bg-card/80',
+                'shadow-lg shadow-black/20',
+                'cursor-pointer hover:scale-[1.02] active:scale-[0.98]',
+                'transition-transform duration-150',
+              )}
+            >
+              <div className={cn(
+                'flex items-center justify-center w-10 h-10 rounded-lg',
+                'bg-background/50',
+              )}>
+                <Icon className={cn('w-5 h-5', config.iconColor)} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">{config.title}</p>
+                <p className="text-xs text-muted-foreground">{config.message}</p>
+              </div>
+            </button>
+          </m.div>
+        );
+      })()}
+    </AnimatePresence>
   );
 });

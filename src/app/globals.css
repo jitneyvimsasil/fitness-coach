@@ -113,6 +113,12 @@
   --sidebar-ring: oklch(0.93 0.20 110);
 }
 
+/* Prevent browser scrollbar — must be outside @layer for highest specificity */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

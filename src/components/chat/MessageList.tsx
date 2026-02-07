@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { Dumbbell } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
@@ -49,7 +50,7 @@ export function MessageList({ messages, isLoading, stallState, onRetry }: Messag
   }
 
   return (
-    <ScrollArea className="flex-1 p-4">
+    <ScrollArea className="flex-1 min-h-0 p-4">
       <div className="space-y-4 max-w-3xl mx-auto" aria-live="polite" aria-relevant="additions">
         {hasHidden && (
           <div className="text-center">
@@ -61,9 +62,11 @@ export function MessageList({ messages, isLoading, stallState, onRetry }: Messag
             </button>
           </div>
         )}
-        {visibleMessages.map((message) => (
-          <MessageBubble key={message.id} message={message} onRetry={onRetry} />
-        ))}
+        <AnimatePresence initial={false}>
+          {visibleMessages.map((message) => (
+            <MessageBubble key={message.id} message={message} onRetry={onRetry} />
+          ))}
+        </AnimatePresence>
         {isLoading && <TypingIndicator stallState={stallState} />}
         <div ref={bottomRef} />
       </div>

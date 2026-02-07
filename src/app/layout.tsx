@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { MotionProvider } from "@/components/providers/MotionProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,7 @@ export const viewport: Viewport = {
   themeColor: "#0a0a0f",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -64,7 +66,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ErrorBoundary>{children}</ErrorBoundary>
+        <MotionProvider>
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </MotionProvider>
       </body>
     </html>
   );

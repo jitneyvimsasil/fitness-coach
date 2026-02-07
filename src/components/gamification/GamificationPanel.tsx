@@ -7,6 +7,7 @@ import { ProgressRing } from './ProgressRing';
 import { LevelDisplay } from './LevelDisplay';
 import { StreakCounter } from './StreakCounter';
 import { BadgeSlots } from './BadgeSlots';
+import { CountUp } from '@/components/ui/count-up';
 import type { ProgressInfo, StreakInfo, BadgeWithStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -60,7 +61,9 @@ export const GamificationPanel = React.memo(function GamificationPanel({
       <div className="flex justify-center">
         <ProgressRing progress={progress.progress} size={140} strokeWidth={10}>
           <div className="text-center">
-            <p className="text-2xl font-bold">{Math.round(progress.progress)}%</p>
+            <p className="text-2xl font-bold">
+              <CountUp to={Math.round(progress.progress)} formatFn={(v) => `${Math.round(v)}%`} />
+            </p>
             <p className="text-xs text-muted-foreground">to next level</p>
           </div>
         </ProgressRing>
@@ -76,7 +79,7 @@ export const GamificationPanel = React.memo(function GamificationPanel({
       {progress.messagesToNext > 0 && (
         <div className="pt-2 border-t border-border">
           <p className="text-xs text-muted-foreground">
-            <span className="text-primary font-medium">{progress.messagesToNext}</span> more messages to reach the next level
+            <CountUp to={progress.messagesToNext} className="text-primary font-medium" /> more messages to reach the next level
           </p>
         </div>
       )}

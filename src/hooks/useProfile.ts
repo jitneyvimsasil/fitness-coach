@@ -215,10 +215,14 @@ export function useProfile() {
         // Upsert newly earned badges (ignoreDuplicates prevents constraint errors)
         if (newBadges.length > 0) {
           const { error: badgeError } = await supabase.from('user_badges').upsert(
-            newBadges.map(b => ({ user_id: profile.id, badge_id: b.id })),
+            newBadges.map(b => ({
+              user_id: profile.id,
+              badge_id: b.id,
+              earned_at: new Date().toISOString(),
+            })),
             { onConflict: 'user_id,badge_id', ignoreDuplicates: true },
           );
-          if (badgeError) console.warn('Badge upsert error:', badgeError);
+          if (badgeError) console.error('Badge persistence failed:', badgeError.message, badgeError.code, badgeError.details);
         }
       } catch (err) {
         console.error('Failed to update profile:', err);

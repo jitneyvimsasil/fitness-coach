@@ -16,7 +16,7 @@ interface ChatContainerProps {
 
 export function ChatContainer({ messages, isLoading, stallState, onSend, onRetry }: ChatContainerProps) {
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full min-h-0 bg-background">
       <ErrorBoundary fallback={<ChatErrorFallback />}>
         <MessageList messages={messages} isLoading={isLoading} stallState={stallState} onRetry={onRetry} />
       </ErrorBoundary>

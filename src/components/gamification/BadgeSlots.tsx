@@ -29,7 +29,7 @@ export const BadgeSlots = React.memo(function BadgeSlots({ badges, className }: 
         <p className="text-xs text-muted-foreground uppercase tracking-wider">Badges</p>
         <p className="text-xs text-muted-foreground">{earnedCount}/{badges.length}</p>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
         {badges.map((badge) => {
           const Icon = badge.earned
             ? (BADGE_ICONS[badge.icon_name] || Lock)

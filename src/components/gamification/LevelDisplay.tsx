@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { m } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { LEVEL_COLORS } from '@/lib/gamification';
 
@@ -15,7 +16,11 @@ export const LevelDisplay = React.memo(function LevelDisplay({ level, name, clas
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      <div
+      <m.div
+        key={level}
+        initial={{ scale: 1.3 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 15 }}
         className={cn(
           'flex items-center justify-center w-10 h-10 rounded-lg font-bold text-lg',
           colors.bg,
@@ -24,7 +29,7 @@ export const LevelDisplay = React.memo(function LevelDisplay({ level, name, clas
         )}
       >
         {level}
-      </div>
+      </m.div>
       <div>
         <p className="text-xs text-muted-foreground uppercase tracking-wider">Level</p>
         <p className={cn('font-semibold', colors.text)}>{name}</p>
