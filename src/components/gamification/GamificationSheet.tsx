@@ -21,6 +21,8 @@ interface GamificationSheetProps {
   streakInfo: StreakInfo | null;
   badges: BadgeWithStatus[];
   loading?: boolean;
+  createdAt?: string;
+  totalActiveDays?: number;
 }
 
 export function GamificationSheet({
@@ -29,6 +31,8 @@ export function GamificationSheet({
   streakInfo,
   badges,
   loading,
+  createdAt,
+  totalActiveDays,
 }: GamificationSheetProps) {
   const [open, setOpen] = useState(false);
 
@@ -72,6 +76,8 @@ export function GamificationSheet({
               streakInfo={streakInfo}
               badges={badges}
               loading={loading}
+              createdAt={createdAt}
+              totalActiveDays={totalActiveDays}
             />
           </div>
         </div>

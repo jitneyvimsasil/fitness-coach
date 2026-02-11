@@ -43,17 +43,29 @@ function saveMessages(messages: Message[]) {
 export function useChat(options: UseChatOptions = {}) {
   const { onMessageSent, userId } = options;
 
-  const [messages, setMessages] = useState<Message[]>(loadMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stallState, setStallState] = useState<StallState>('normal');
 
   const abortRef = useRef<AbortController | null>(null);
   const stallTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const hasMounted = useRef(false);
 
-  // Persist messages to sessionStorage
+  // Load messages from sessionStorage after mount (avoids hydration mismatch)
   useEffect(() => {
-    saveMessages(messages);
+    const stored = loadMessages();
+    if (stored.length > 0) {
+      setMessages(stored);
+    }
+    hasMounted.current = true;
+  }, []);
+
+  // Persist messages to sessionStorage (skip until after initial load)
+  useEffect(() => {
+    if (hasMounted.current) {
+      saveMessages(messages);
+    }
   }, [messages]);
 
   // Cleanup on unmount

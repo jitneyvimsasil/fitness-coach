@@ -115,6 +115,8 @@ export default function ChatPage() {
               streakInfo={streakInfo}
               badges={badgesWithStatus}
               loading={profileLoading}
+              createdAt={profile?.created_at}
+              totalActiveDays={profile?.total_active_days}
             />
           </div>
         </aside>
@@ -127,6 +129,8 @@ export default function ChatPage() {
         streakInfo={streakInfo}
         badges={badgesWithStatus}
         loading={profileLoading}
+        createdAt={profile?.created_at}
+        totalActiveDays={profile?.total_active_days}
       />
     </div>
   );

@@ -110,6 +110,7 @@ export function useProfile() {
             last_active_date: null,
             streak_freezes_available: 0,
             last_freeze_date: null,
+            total_active_days: 0,
           };
 
           const { data: created, error: createError } = await supabase

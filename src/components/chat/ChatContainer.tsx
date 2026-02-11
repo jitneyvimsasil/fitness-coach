@@ -18,7 +18,7 @@ export function ChatContainer({ messages, isLoading, stallState, onSend, onRetry
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
       <ErrorBoundary fallback={<ChatErrorFallback />}>
-        <MessageList messages={messages} isLoading={isLoading} stallState={stallState} onRetry={onRetry} />
+        <MessageList messages={messages} isLoading={isLoading} stallState={stallState} onRetry={onRetry} onSend={onSend} />
       </ErrorBoundary>
       <ChatInput onSend={onSend} disabled={isLoading} />
     </div>

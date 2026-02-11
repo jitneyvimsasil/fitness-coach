@@ -1,5 +1,12 @@
+'use client';
+
+import dynamic from 'next/dynamic';
 import { SignupForm } from '@/components/auth/SignupForm';
-import { SparklesCore } from '@/components/ui/sparkles';
+
+const SparklesCore = dynamic(
+  () => import('@/components/ui/sparkles').then(mod => ({ default: mod.SparklesCore })),
+  { ssr: false }
+);
 
 export default function SignupPage() {
   return (

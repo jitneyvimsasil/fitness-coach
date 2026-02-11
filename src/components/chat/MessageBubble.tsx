@@ -53,9 +53,9 @@ export const MessageBubble = React.memo(function MessageBubble({ message, onRetr
         )}>
           <time
             className="text-[10px] opacity-60"
-            aria-label={`Sent at ${timestamp.toLocaleTimeString()}`}
+            aria-label={`Sent at ${timestamp.toLocaleTimeString('en-US')}`}
           >
-            {timestamp.toLocaleTimeString([], {
+            {timestamp.toLocaleTimeString('en-US', {
               hour: '2-digit',
               minute: '2-digit',
             })}

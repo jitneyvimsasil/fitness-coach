@@ -21,6 +21,7 @@ export interface UserProfile {
   last_active_date: string | null;
   streak_freezes_available: number;
   last_freeze_date: string | null;
+  total_active_days: number;
   created_at: string;
   updated_at: string;
 }

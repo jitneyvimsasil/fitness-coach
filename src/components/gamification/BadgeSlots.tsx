@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { BADGE_ICONS } from '@/lib/gamification';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,10 @@ interface BadgeSlotsProps {
 }
 
 export const BadgeSlots = React.memo(function BadgeSlots({ badges, className }: BadgeSlotsProps) {
+  // Client-only timestamp to avoid hydration mismatch from Date.now() in render
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => { setNow(Date.now()); }, []);
+
   if (badges.length === 0) {
     return (
       <div className={cn('space-y-3', className)}>
@@ -35,9 +39,9 @@ export const BadgeSlots = React.memo(function BadgeSlots({ badges, className }: 
             ? (BADGE_ICONS[badge.icon_name] || Lock)
             : Lock;
 
-          // Check if recently earned (within 60 seconds)
-          const isRecent = badge.earned_at &&
-            (Date.now() - new Date(badge.earned_at).getTime()) < 60000;
+          // Check if recently earned (within 60 seconds) — uses client-only `now` to avoid hydration mismatch
+          const isRecent = now && badge.earned_at &&
+            (now - new Date(badge.earned_at).getTime()) < 60000;
 
           return (
             <div
@@ -75,7 +79,7 @@ export const BadgeSlots = React.memo(function BadgeSlots({ badges, className }: 
                 <p className="text-xs font-medium text-foreground">{badge.name}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   {badge.earned
-                    ? `Earned ${badge.earned_at ? new Date(badge.earned_at).toLocaleDateString() : ''}`
+                    ? `Earned ${badge.earned_at ? new Date(badge.earned_at).toLocaleDateString('en-US') : ''}`
                     : badge.description}
                 </p>
               </div>

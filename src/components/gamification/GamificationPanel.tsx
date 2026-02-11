@@ -7,6 +7,7 @@ import { ProgressRing } from './ProgressRing';
 import { LevelDisplay } from './LevelDisplay';
 import { StreakCounter } from './StreakCounter';
 import { BadgeSlots } from './BadgeSlots';
+import { UsageStats } from './UsageStats';
 import { CountUp } from '@/components/ui/count-up';
 import type { ProgressInfo, StreakInfo, BadgeWithStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,8 @@ interface GamificationPanelProps {
   badges: BadgeWithStatus[];
   loading?: boolean;
   className?: string;
+  createdAt?: string;
+  totalActiveDays?: number;
 }
 
 export const GamificationPanel = React.memo(function GamificationPanel({
@@ -27,6 +30,8 @@ export const GamificationPanel = React.memo(function GamificationPanel({
   badges,
   loading,
   className,
+  createdAt,
+  totalActiveDays,
 }: GamificationPanelProps) {
   if (loading) {
     return (
@@ -74,6 +79,13 @@ export const GamificationPanel = React.memo(function GamificationPanel({
 
       {/* Streak Counter */}
       <StreakCounter streakInfo={streakInfo} messageCount={messageCount} />
+
+      {/* Usage Stats */}
+      {createdAt && totalActiveDays !== undefined && (
+        <div className="pt-2 border-t border-border">
+          <UsageStats createdAt={createdAt} totalActiveDays={totalActiveDays} />
+        </div>
+      )}
 
       {/* Next Level Info */}
       {progress.messagesToNext > 0 && (

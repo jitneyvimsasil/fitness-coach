@@ -164,6 +164,9 @@ export function computeStreakUpdate(profile: UserProfile): {
     return { updates, events };
   }
 
+  // New active day — increment total
+  updates.total_active_days = (profile.total_active_days || 0) + 1;
+
   const yesterday = getYesterday();
 
   if (!lastActive || lastActive === yesterday) {

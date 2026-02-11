@@ -6,6 +6,7 @@ import { Dumbbell } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
+import { SuggestionCards } from './SuggestionCards';
 import type { Message } from '@/lib/types';
 import type { StallState } from '@/hooks/useChat';
 
@@ -14,11 +15,12 @@ interface MessageListProps {
   isLoading?: boolean;
   stallState?: StallState;
   onRetry?: (messageId: string) => void;
+  onSend?: (message: string) => void;
 }
 
 const VISIBLE_LIMIT = 50;
 
-export function MessageList({ messages, isLoading, stallState, onRetry }: MessageListProps) {
+export function MessageList({ messages, isLoading, stallState, onRetry, onSend }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -33,17 +35,18 @@ export function MessageList({ messages, isLoading, stallState, onRetry }: Messag
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center max-w-md">
+        <div className="text-center max-w-lg">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
             <Dumbbell className="w-8 h-8 text-primary" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
             Welcome to Fitness Coach
           </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed mb-8">
             I&apos;m here to help with strength training, nutrition, yoga, and mobility.
             Ask me anything about your fitness journey!
           </p>
+          {onSend && <SuggestionCards onSend={onSend} />}
         </div>
       </div>
     );
